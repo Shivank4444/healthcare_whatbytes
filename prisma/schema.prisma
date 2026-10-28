@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String          @id @default(uuid()) @db.Uuid
+  name         String          @db.VarChar(120)
+  email        String          @unique @db.VarChar(255)
+  passwordHash String          @db.VarChar(255)
+  patients     Patient[]
+  doctors      Doctor[]
+  mappings     PatientDoctor[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([createdAt])
+}
+
+
+model Patient {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @db.VarChar(120)
+  dateOfBirth DateTime?
+  gender      Gender?
+  email       String?         @db.VarChar(255)
+  phone       String?         @db.VarChar(30)
+  address     String?         @db.VarChar(500)
+  notes       String?         @db.VarChar(2000)
+  createdById String          @db.Uuid
+  createdBy   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  mappings    PatientDoctor[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+
+  @@index([createdById])
+  @@index([name])
+}
+
+
+model Doctor {
+  id              String          @id @default(uuid()) @db.Uuid
+  name            String          @db.VarChar(120)
+  email           String?         @db.VarChar(255)
+  phone           String?         @db.VarChar(30)
+  specialization   String          @db.VarChar(120)
+  licenseNumber   String?         @unique @db.VarChar(100)
+  clinicAddress   String?         @db.VarChar(500)
+  createdById     String          @db.Uuid
+  createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  mappings        PatientDoctor[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+
+  @@index([createdById])
+  @@index([specialization])
+  @@index([name])
+}
+
+
+model PatientDoctor {
+  id          String   @id @default(uuid()) @db.Uuid
+  patientId   String   @db.Uuid
+  doctorId    String   @db.Uuid
+  createdById String   @db.Uuid
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([patientId, doctorId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([createdById])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
